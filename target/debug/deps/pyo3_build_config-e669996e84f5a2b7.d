@@ -1,0 +1,14 @@
+C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\deps\pyo3_build_config-e669996e84f5a2b7.d: C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\lib.rs C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\errors.rs C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\impl_.rs C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\build\pyo3-build-config-1e9e00a67a987d28\out/pyo3-build-config-file.txt C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\build\pyo3-build-config-1e9e00a67a987d28\out/pyo3-build-config.txt
+
+C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\deps\libpyo3_build_config-e669996e84f5a2b7.rlib: C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\lib.rs C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\errors.rs C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\impl_.rs C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\build\pyo3-build-config-1e9e00a67a987d28\out/pyo3-build-config-file.txt C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\build\pyo3-build-config-1e9e00a67a987d28\out/pyo3-build-config.txt
+
+C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\deps\libpyo3_build_config-e669996e84f5a2b7.rmeta: C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\lib.rs C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\errors.rs C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\impl_.rs C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\build\pyo3-build-config-1e9e00a67a987d28\out/pyo3-build-config-file.txt C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\build\pyo3-build-config-1e9e00a67a987d28\out/pyo3-build-config.txt
+
+C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\lib.rs:
+C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\errors.rs:
+C:\Users\Hiroux\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.22.6\src\impl_.rs:
+C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\build\pyo3-build-config-1e9e00a67a987d28\out/pyo3-build-config-file.txt:
+C:\Users\Hiroux\Favorites\Desktop\Bureau\Berserker\target\debug\build\pyo3-build-config-1e9e00a67a987d28\out/pyo3-build-config.txt:
+
+# env-dep:CARGO_PKG_VERSION=0.22.6
+# env-dep:OUT_DIR=C:\\Users\\Hiroux\\Favorites\\Desktop\\Bureau\\Berserker\\target\\debug\\build\\pyo3-build-config-1e9e00a67a987d28\\out

@@ -1,0 +1,95 @@
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #212121;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+h1 {
+  letter-spacing: 2px;
+}
+nav,
+header {
+  height: auto;
+  width: 100%;
+}
+ul {
+  height: auto;
+  width: 100%;
+  display: flex;
+  flex-flow: column nowrap;
+  place-content: center space-evenly;
+}
+li {
+  list-style-type: none;
+}
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.msg {
+  padding: 12px 18px;
+  border-radius: 18px;
+  max-width: 80%;
+  line-height: 1.4;
+}
+.user {
+  align-self: flex-end;
+  background: #3b82f6;
+  color: white;
+}
+.ia {
+  align-self: flex-start;
+  background: #333;
+  color: #e5e7eb;
+  border: 1px solid #444;
+}
+#input-area {
+  padding: 20px;
+  background: #1a1a1a;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #333;
+  background: url("assets/image/introPapper.png") no-repeat 50% 50%;
+}
+input {
+  flex: 1;
+  padding: 12px;
+  background: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: white;
+  outline: none;
+  box-shadow: 0px 0px 3px #fff;
+}
+button {
+  padding: 10px 20px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+button:hover {
+  background: #2563eb;
+}
+#liste-proc {
+  height: 400px;
+  width: 250px;
+  border: 1px solid #fff;
+  border-radius: 15px;
+  overflow-y: scroll;
+}
+.view {
+    display: block;
+}
