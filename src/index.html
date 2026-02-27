@@ -9,21 +9,60 @@
 
 <body>
     <header>
-        <h1>Berserker</h1>
-        <nav>
-            <button class="btn-primary" onclick="chargerProcessus()">View process</button><button class="btn-danger" onclick="arreterScan()">Arrêter</button>
-            <div id="liste-proc"></div>
-        </nav>
+        <img src="assets/image/berserkerLogo.png" alt="Logo" class="logo">
+        <hgroup class="title__ctnr">
+            <h1>Berserker</h1>
+            <hr>
+            <h2>Gate crasher</h2>
+        </hgroup>
+        <p class="signature">By Script'Enjøyer 2026</p>
     </header>
-
+    <section class="main__content">
+        <ul class="option__ctnr">
+            <li class="option__el">
+                <a href="#" class="option__title">View process</a>
+                <div class="option__wrapper">
+                    <button class="btn-primary" onclick="chargerProcessus()">Scan process</button>
+                    <button class="btn-danger" onclick="arreterScan()">Arrêter</button>
+                    <div id="liste-proc"></div>
+                </div>
+            </li>
+            <li class="option__el">
+                <a href="#" class="option__title">Selected Target</a>
+                <div class="option__wrapper">
+                    <div id="target-display" style="color: #4ade80; margin: 10px 0;">Target: None</div>
+                </div>
+            </li>
+            <li class="option__el">
+                <a href="#" class="option__title">First scan</a>
+                <div class="option__wrapper">
+                    <input type="number" id="valeur-scan" placeholder="Valeur (ex: 100)">
+                    <button class="btn-primary" onclick="lancerPremierScan()">First Scan</button>
+                    <button class="btn-primary" style="background:#10b981;" onclick="lancerNextScan()">Next Scan</button>
+                    <div id="res-scan" style="max-height: 150px; overflow-y: auto; font-size: 10px; color: #4ade80;">
+                    </div>
+                </div>
+            </li>
+            <li class="option__el">
+                <a href="#" class="option__title">Memory Scan</a>
+                <div class="option__wrapper">
+                    <input type="number" id="scan-pid" placeholder="PID">
+                    <input type="text" id="scan-addr" placeholder="Adresse (ex: 0x123)">
+                    <button class="btn-primary" onclick="lireMemoire()">Scan memory</button>
+                    <div id="res-mem"></div>
+                </div>
+            </li>
+            <li class="option__el">
+            </li>
+        </ul>
+    </section>
     <div id="chat"></div>
-
     <div id="input-area">
         <input type="text" id="msg-input" placeholder="Berserker A.I" />
-        <button onclick="envoyer()">Envoyer</button>
+        <button onclick="envoyer()" class="aiBtn"><img src="assets/image/berserkerLogo.png" alt="Logo"
+                class="btnLogo"></button>
     </div>
-    <script src="assets/JS/processCharger.js"></script>
-    <script>
+    <script type="text/javascript">
         let invoke;
 
         // Fonction qui cherche la connexion avec Rust toutes les 100ms
@@ -81,6 +120,11 @@
             if (e.key === "Enter") envoyer();
         });
     </script>
+    <script src="assets/JS/processCharger.js"></script>
+    <script src="assets/JS/memoryScan.js"></script>
+    <script src="assets/JS/firstScan.js"></script>
+    <script src="assets/JS/nextScan.js"></script>
+    <script src="assets/JS/valueModifier.js"></script>
 </body>
 
 </html>

@@ -80,6 +80,7 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "log",
+ "once_cell",
  "pyo3",
  "serde",
  "serde_json",
@@ -87,6 +88,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-log",
+ "windows 0.52.0",
 ]
 
 [[package]]

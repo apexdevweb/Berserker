@@ -1,47 +1,106 @@
+// Variable globale pour stocker le processus cible (Target)
+let targetPid = null;
+
+/**
+ * Filtre les processus pour ne garder que les "Applications"
+ * On exclut les processus système Windows classiques qui polluent la liste.
+ */
+function filtrerApplications(procs) {
+    const exclusions = [
+        "svchost.exe", "conhost.exe", "runtimebroker.exe", "taskhostw.exe",
+        "taskmgr.exe", "sihost.exe", "searchhost.exe", "startmenuexperiencehost.exe",
+        "dllhost.exe", "fontdrvhost.exe", "dwm.exe", "ctfmon.exe", "lsass.exe",
+        "services.exe", "wininit.exe", "winlogon.exe", "smss.exe"
+    ];
+
+    return procs.filter(p => {
+        const name = p.name.toLowerCase();
+        // On garde seulement si le nom n'est pas dans la liste d'exclusion
+        return !exclusions.includes(name);
+    });
+}
+
 async function chargerProcessus() {
     const container = document.getElementById('liste-proc');
     
-    // 1. On récupère invoke (vérifie que Tauri est chargé)
+    // 1. Vérification du moteur Tauri
     if (!window.__TAURI__ || !window.__TAURI__.core) {
-        container.innerHTML = "Erreur : Le moteur Tauri n'est pas encore prêt.";
+        container.innerHTML = "Erreur : Moteur Tauri non prêt.";
         return;
     }
 
     const { invoke } = window.__TAURI__.core;
-    container.innerHTML = "<i>Recherche des processus...</i>";
+    container.innerHTML = "<i>Analyse des applications en cours...</i>";
     
     try {
-        // CORRECTION ICI : On utilise l'underscore '_' comme dans le main.rs
-        const procs = await invoke('lister_processus');
+        // 2. Appel de la commande Rust
+        let procs = await invoke('lister_processus_objets');
         
-        if (procs.length === 0) {
-            container.innerHTML = "Aucun processus trouvé.";
-        } else {
-            // On affiche la liste proprement
-            container.innerHTML = procs.join('<br>');
+        // 3. Application du filtre "Apps uniquement"
+        const apps = filtrerApplications(procs);
+
+        if (apps.length === 0) {
+            container.innerHTML = "Aucune application détectée.";
+            return;
         }
+
+        // 4. Construction de la liste propre
+        container.innerHTML = apps.map(p => `
+            <div class="proc-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #333; cursor:pointer;">
+                <span onclick="selectionnerTarget(${p.pid}, '${p.name}')" style="flex:1; font-weight:500;">
+                    <b style="color:#3b82f6;">[${p.pid}]</b> ${p.name}
+                </span>
+                <button onclick="tuer(${p.pid}, '${p.name}')" style="background:#451a1a; border:none; color:#ff4444; cursor:pointer; padding:2px 8px; border-radius:4px; font-size:10px;">KILL</button>
+            </div>
+        `).join('');
+
     } catch (err) {
-        // Si l'erreur est "Command not found", c'est qu'il manque l'autorisation
-        container.innerHTML = "<span style='color:red'>Erreur : " + err + "</span>";
-        console.error("Détails de l'erreur processus :", err);
+        container.innerHTML = `<span style="color:red">Erreur : ${err}</span>`;
+        console.error("Détails :", err);
     }
 }
 
-async function tuer(pid) {
-    if (confirm(`Voulez-vous vraiment arrêter le processus ${pid} ?`)) {
-        const { invoke } = window.__TAURI__.core;
-        const success = await invoke('tuer_processus', { pid: parseInt(pid) });
-        if (success) {
-            alert("Processus arrêté !");
-            chargerProcessus(); // On rafraîchit la liste
-        } else {
-            alert("Erreur : Impossible d'arrêter ce processus.");
+// Fonction pour sélectionner une cible (Target)
+function selectionnerTarget(pid, name) {
+    targetPid = pid;
+    
+    // Mise à jour visuelle du bandeau Target
+    const targetDisplay = document.getElementById('target-display');
+    if (targetDisplay) {
+        targetDisplay.innerHTML = `Target: <span style="color:#4ade80">${name}</span> <small>(${pid})</small>`;
+        targetDisplay.style.background = "#1e293b"; // Petit flash visuel
+    }
+
+    // Auto-remplissage du champ PID dans le module de Scan Mémoire
+    const scanPidInput = document.getElementById('scan-pid');
+    if (scanPidInput) {
+        scanPidInput.value = pid;
+    }
+
+    console.log(`[Berserker] Cible verrouillée : ${name} (${pid})`);
+}
+
+async function tuer(pid, name) {
+    // Double vérification car "tuer" est une action critique
+    const confirmation = confirm(`BERSERKER : Confirmer la destruction du processus ${name} ?`);
+    
+    if (confirmation) {
+        try {
+            const { invoke } = window.__TAURI__.core;
+            const success = await invoke('tuer_processus', { pid: parseInt(pid) });
+            
+            if (success) {
+                chargerProcessus(); // On rafraîchit la liste automatiquement
+            } else {
+                alert("Erreur : Impossible d'arrêter ce processus (Privilèges insuffisants).");
+            }
+        } catch (err) {
+            alert("Erreur technique lors du kill : " + err);
         }
     }
 }
 
 function arreterScan() {
-    const container = document.getElementById('liste-proc');
-    container.innerHTML = "Scan arrêté.";
+    document.getElementById('liste-proc').innerHTML = "Scan des processus arrêté.";
 }
 
