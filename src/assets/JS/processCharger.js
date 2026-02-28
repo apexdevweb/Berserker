@@ -50,7 +50,7 @@ async function chargerProcessus() {
                 <span onclick="selectionnerTarget(${p.pid}, '${p.name}')" style="flex:1; font-weight:500;">
                     <b style="color:#3b82f6;">[${p.pid}]</b> ${p.name}
                 </span>
-                <button onclick="tuer(${p.pid}, '${p.name}')" style="background:#451a1a; border:none; color:#ff4444; cursor:pointer; padding:2px 8px; border-radius:4px; font-size:10px;">KILL</button>
+                <button onclick="tuer(${p.pid}, '${p.name}')" class="stickers">KILL</button>
             </div>
         `).join('');
 

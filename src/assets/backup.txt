@@ -1,0 +1,78 @@
+créé moi simlement un fichier dll
+On va faire au plus court pour que ton i9 le compile en 2 secondes. Pas besoin de projet complexe, on va utiliser un seul fichier. [1.1]
+1. Crée un dossier ma_dll sur ton bureau
+Ouvre un terminal dedans et tape :
+powershell
+cargo init --lib
+Utilisez le code avec précaution.
+
+2. Copie ce Cargo.toml
+Remplace tout le contenu du fichier Cargo.toml par celui-ci (c'est ce qui dit à Rust de créer une .dll) : [1.2]
+toml
+[package]
+name = "berserker_test"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"] # INDISPENSABLE pour générer une DLL
+
+[dependencies]
+windows = { version = "0.52", features = ["Win32_UI_WindowsAndMessaging"] }
+Utilisez le code avec précaution.
+
+3. Copie ce Code (src/lib.rs)
+C'est le code minimal qui va faire apparaître une fenêtre de message dans ton jeu ou Notepad++. [1.3]
+rust
+use std::ptr::null_mut;
+use windows::core::s;
+use windows::Win32::UI::WindowsAndMessaging::{MessageBoxA, MB_OK, MB_ICONINFORMATION};
+
+#[no_mangle]
+pub extern "system" fn DllMain(_: *mut u8, reason: u32, _: *mut u8) -> bool {
+    if reason == 1 { // 1 = DLL_PROCESS_ATTACH
+        unsafe {
+            MessageBoxA(None, s!("INJECTION REUSSIE !"), s!("Berserker Engine"), MB_OK | MB_ICONINFORMATION);
+        }
+    }
+    true
+}
+Utilisez le code avec précaution.
+
+4. Compile la DLL 🚀
+Dans ton terminal, tape :
+powershell
+cargo build --release
+Utilisez le code avec précaution.
+
+🎯 Résultat :
+Ton fichier se trouve ici : target/release/berserker_test.dll. [1.4]
+Maintenant, ouvre Berserker :
+Sélectionne Notepad++ (pour tester en sécurité). [1.5]
+Clique sur Select & Inject DLL.
+Choisis ton fichier berserker_test.dll. [1.6]
+Si tu vois une fenêtre "Berserker Engine" s'ouvrir au milieu de Notepad++, ton injecteur est officiellement validé !
+Alors, la fenêtre est apparue ?
+Documentation Rust - cdylib
+Windows API - MessageBoxA
+Quelle est la suite : on passe au "Freeze" de ton or dans Dynasty Warriors ? ❄️💰
+Les réponses de l'IA peuvent contenir des erreurs. En savoir plus
+
+
+
+je peut pas juste prendre un fichier dll de mon ordinateur ?
+Bien sûr que si ! [1.1] Tu peux injecter n'importe quel fichier .dll présent sur ton disque dur. [1.2]
+⚠️ Mais attention, Gate Crasher :
+Compatibilité : Si ton jeu (Dynasty Warriors) est en 64-bit, ta DLL doit impérativement être en 64-bit. [1.3] (C'est le cas de 99% des fichiers dans C:\Windows\System32).
+Le Risque : Injecter une DLL système au hasard (comme kernel32.dll ou user32.dll) ne fera rien car le jeu les a déjà chargées. [1.4]
+Le Crash : Si tu injectes une DLL qui n'est pas prévue pour être "exécutée" (comme une DLL de ressources graphiques), le jeu va crasher instantanément. [1.5]
+🎯 Le test sans risque :
+Si tu veux tester ton injecteur sans coder, cherche une DLL de "Overlay" ou de "Mod" que tu as déjà (par exemple pour Reshade, Special K, ou un Menu Mod de jeu).
+Pour tester tout de suite avec un fichier existant :
+Ouvre ton dossier Berserker.
+Clique sur ton bouton SELECT & INJECT DLL.
+Navigue vers un dossier de jeu et cherche un fichier .dll.
+Injecte-le.
+Alors, est-ce que ton injecteur a réussi à "pousser" la DLL dans le processus sans faire crasher le jeu ?
+Si ça marche, on passe au Freeze de l'or (le vrai cheat) ou tu veux qu'on peaufine encore l'IA de Diagnostic ? ❄️💰 [1.6]
+Les réponses de l'IA peuvent contenir des erreurs. En savoir plus

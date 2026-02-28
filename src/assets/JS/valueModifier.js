@@ -1,5 +1,5 @@
 async function modifierAdresse(addrInt, addrHex) {
-    const nouvelleVal = prompt(`Quelle nouvelle valeur pour ${addrHex} ?`, "999");
+    const nouvelleVal = prompt(`Quelle nouvelle valeur pour ${addrHex} ?`, "...");
     if (nouvelleVal === null) return;
 
     try {

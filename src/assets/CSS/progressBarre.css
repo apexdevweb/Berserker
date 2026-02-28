@@ -1,0 +1,70 @@
+.barre__progress--ctnr{
+  height: auto;
+  width: auto;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: space-evenly;
+}
+#scan-bar {
+  appearance: none; /* Supprime le style Windows par défaut */
+  width: 20vw; /* Utilise toute la largeur de ta fenêtre */
+  height: 8px;
+  position: relative;
+  bottom: 0;
+  left: 0;
+  border: none;
+  background: #000; /* Fond de la barre */
+  border-radius: 20px;
+}
+
+/* La partie qui se remplit (Chrome/Edge/Tauri) */
+#scan-bar::-webkit-progress-value {
+  background: linear-gradient(90deg, #3b82f6, #00ff41);
+  box-shadow: 0 0 15px #3b82f6;
+  transition: width 0.3s ease-out;
+  border-radius: 20px;
+}
+
+/* Le fond de la barre */
+#scan-bar::-webkit-progress-bar {
+  background-color: #111;
+  border-radius: 20px;
+}
+.prog__meter {
+  font-size: 1.2rem;
+  font-weight: 500; /* Plus épais pour bien voir le dégradé */
+  font-family: "Consolas", monospace;
+
+  /* Le secret du texte en dégradé */
+  background: linear-gradient(90deg, #3b82f6, #00ff41);
+  -webkit-background-clip: text; /* Obligatoire pour Chrome/Edge/Tauri [1.4] */
+  background-clip: text;
+  color: transparent;
+
+  /* Petit effet de lueur pour le style Gate Crasher */
+  filter: drop-shadow(0 0 5px #000);
+}
+.inject__barre {
+  appearance: none; /* Supprime le style Windows par défaut */
+  width: 20vw; /* Utilise toute la largeur de ta fenêtre */
+  height: 8px;
+  position: relative;
+  bottom: 0;
+  left: 0;
+  border: none;
+  background: #000; /* Fond de la barre */
+  border-radius: 20px;
+}
+.inject__barre::-webkit-progress-value {
+  background: linear-gradient(90deg, #3b82f6, #00ff41);
+  box-shadow: 0 0 15px #3b82f6;
+  transition: width 0.3s ease-out;
+  border-radius: 20px;
+}
+
+
+.inject__barre::-webkit-progress-bar {
+  background-color: #111;
+  border-radius: 20px;
+}

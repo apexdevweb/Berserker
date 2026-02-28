@@ -2,129 +2,97 @@
 <html>
 
 <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css" />
-    <title>Berserker</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="assets/CSS/style.css" />
+  <title>BERSERKER</title>
 </head>
 
 <body>
-    <header>
-        <img src="assets/image/berserkerLogo.png" alt="Logo" class="logo">
-        <hgroup class="title__ctnr">
-            <h1>Berserker</h1>
-            <hr>
-            <h2>Gate crasher</h2>
-        </hgroup>
-        <p class="signature">By Script'Enjøyer 2026</p>
-    </header>
-    <section class="main__content">
-        <ul class="option__ctnr">
-            <li class="option__el">
-                <a href="#" class="option__title">View process</a>
-                <div class="option__wrapper">
-                    <button class="btn-primary" onclick="chargerProcessus()">Scan process</button>
-                    <button class="btn-danger" onclick="arreterScan()">Arrêter</button>
-                    <div id="liste-proc"></div>
-                </div>
-            </li>
-            <li class="option__el">
-                <a href="#" class="option__title">Selected Target</a>
-                <div class="option__wrapper">
-                    <div id="target-display" style="color: #4ade80; margin: 10px 0;">Target: None</div>
-                </div>
-            </li>
-            <li class="option__el">
-                <a href="#" class="option__title">First scan</a>
-                <div class="option__wrapper">
-                    <input type="number" id="valeur-scan" placeholder="Valeur (ex: 100)">
-                    <button class="btn-primary" onclick="lancerPremierScan()">First Scan</button>
-                    <button class="btn-primary" style="background:#10b981;" onclick="lancerNextScan()">Next Scan</button>
-                    <div id="res-scan" style="max-height: 150px; overflow-y: auto; font-size: 10px; color: #4ade80;">
-                    </div>
-                </div>
-            </li>
-            <li class="option__el">
-                <a href="#" class="option__title">Memory Scan</a>
-                <div class="option__wrapper">
-                    <input type="number" id="scan-pid" placeholder="PID">
-                    <input type="text" id="scan-addr" placeholder="Adresse (ex: 0x123)">
-                    <button class="btn-primary" onclick="lireMemoire()">Scan memory</button>
-                    <div id="res-mem"></div>
-                </div>
-            </li>
-            <li class="option__el">
-            </li>
-        </ul>
-    </section>
-    <div id="chat"></div>
-    <div id="input-area">
-        <input type="text" id="msg-input" placeholder="Berserker A.I" />
-        <button onclick="envoyer()" class="aiBtn"><img src="assets/image/berserkerLogo.png" alt="Logo"
-                class="btnLogo"></button>
+  <header>
+    <img src="assets/image/berserkerLogo.png" alt="Logo" class="header__logo">
+    <hgroup class="title__ctnr">
+      <h1 class="first__title">Berserker</h1>
+      <hr class="title__separate">
+      <h2 class="second__title">Gate crasher</h2>
+    </hgroup>
+    <ul class="info__capacity--ctnr">
+      <li class="info__capacity--el"><em>Exploit Memory</em></li>
+      <li class="info__capacity--el"><em>By pass sécurity</em></li>
+      <li class="info__capacity--el"><em>Injector</em></li>
+      <li class="info__capacity--el"><em>Encryptor</em></li>
+    </ul>
+    <p class="signature">By Script'Enjøyer 2026</p>
+  </header>
+  <section class="exploit__memory--content">
+    <h2 class="section__title">Exploit Memory</h2>
+    <div class="exploit__wrapper">
+      <ul class="option__ctnr">
+        <li class="option__el">
+          <h2 class="option__title">View process</h2>
+          <div class="option__wrapper">
+            <div class="option__btn--ctnr">
+              <button class="btn-primary" onclick="chargerProcessus()">Scan process</button>
+              <button class="btn-primary" onclick="arreterScan()">Stop</button>
+            </div>
+            <div class="process__data--ctnr">
+              <div id="liste-proc" class="process__list--ctnr"></div>
+              <hr class="process__separate">
+              <div class="process__data--subctnr">
+                <h3 class="target__title">Selected Target</h3>
+                <div id="target-display" class="target__display">Target: None</div>
+              </div>
+            </div>
+          </div>
+        </li>
+        <li class="option__el">
+          <h2 class="option__title">Memory scan</h2>
+          <div class="option__wrapper">
+            <div class="btn__scan--ctnr">
+              <input type="number" id="valeur-scan" class="entry__value" placeholder="Valeur (ex: 100)">
+              <button class="btn-primary" onclick="lancerPremierScan()">First Scan</button>
+              <button class="btn-primary" onclick="lancerNextScan()">Next Scan</button>
+            </div>
+            <div class="barre__progress--ctnr">
+              <progress id="scan-bar" value="0" max="100"></progress><span id="progress-meter"
+                class="prog__meter"></span>
+            </div>
+            <div id="res-scan" class="scann__result--ctnr"></div>
+            <button class="btn-primary" onclick="analyserParIA()">Analyze by A.I</button>
+        </li>
+      </ul>
     </div>
-    <script type="text/javascript">
-        let invoke;
-
-        // Fonction qui cherche la connexion avec Rust toutes les 100ms
-        function detecterTauri() {
-            if (window.__TAURI__ && window.__TAURI__.core) {
-                invoke = window.__TAURI__.core.invoke;
-                console.log("✅ Berserker : Connexion au moteur Rust établie !");
-                document.getElementById("msg-input").placeholder =
-                    "Berserker A.I";
-            } else {
-                console.log("⏳ En attente du moteur Tauri...");
-                setTimeout(detecterTauri, 100);
-            }
-        }
-
-        // On lance la détection immédiatement
-        detecterTauri();
-
-        async function envoyer() {
-            const input = document.getElementById("msg-input");
-            const chat = document.getElementById("chat");
-            const text = input.value.trim();
-
-            if (!text) return;
-
-            // Sécurité si l'utilisateur clique trop vite au démarrage
-            if (!invoke) {
-                alert("Le moteur n'est pas encore prêt. Attendez une seconde.");
-                return;
-            }
-
-            // 1. Afficher ton message
-            chat.innerHTML += `<div class="msg user">${text}</div>`;
-            input.value = "";
-            chat.scrollTop = chat.scrollHeight;
-
-            // 2. Bulle de chargement
-            const tempId = "loading-" + Date.now();
-            chat.innerHTML += `<div id="${tempId}" class="msg ia"><i>Berserker réfléchit...</i></div>`;
-
-            try {
-                // 3. Appel de la fonction Rust
-                const reponse = await invoke("envoyer_a_ia", { prompt: text });
-                document.getElementById(tempId).innerHTML = reponse;
-            } catch (err) {
-                document.getElementById(
-                    tempId
-                ).innerHTML = `<span style="color:red">Erreur : ${err}</span>`;
-            }
-            chat.scrollTop = chat.scrollHeight;
-        }
-
-        // Touche Entrée
-        document.getElementById("msg-input").addEventListener("keypress", (e) => {
-            if (e.key === "Enter") envoyer();
-        });
-    </script>
-    <script src="assets/JS/processCharger.js"></script>
-    <script src="assets/JS/memoryScan.js"></script>
-    <script src="assets/JS/firstScan.js"></script>
-    <script src="assets/JS/nextScan.js"></script>
-    <script src="assets/JS/valueModifier.js"></script>
+  </section>
+  <section class="ia__content">
+    <div class="chat__ai__ctnr">
+      <div id="chat" class="chat__ia__response"></div>
+      <hr class="ia__separate">
+      <div id="input-area" class="input__groupe">
+        <input type="text" id="msg-input" placeholder="Berserker A.I" class="prompt__msg" />
+        <button onclick="envoyer()" class="aiBtn"><img src="assets/image/berserkerLogo.png" alt="Logo"class="btnLogo"></button>
+        <button onclick="cleanChat()" class="clean-btn" title="Purge Terminal">PURGE</button>
+      </div>
+    </div>
+  </section>
+  <section class="injector__content">
+    <h2 class="section__title">Injector</h2>
+    <div class="injector__wrapper">
+     <div class="injector__sub--wrapper">
+      <progress id="inject-bar" class="inject__barre" value="0" max="100"></progress><span id="progress-meter" class="prog__meter"></span>
+      <input type="text" id="dll-path" class="injector__input" placeholder="paths to the file...">
+     </div>
+      <button class="btn-primary" onclick="choisirEtInjecter()">Inject Now</button>
+    </div>
+    <div id="res-inject"></div>
+  </section>
+  <script src="assets/JS/main.js"></script>
+  <script src="assets/JS/processCharger.js"></script>
+  <script src="assets/JS/memoryScan.js"></script>
+  <script src="assets/JS/firstScan.js"></script>
+  <script src="assets/JS/nextScan.js"></script>
+  <script src="assets/JS/valueModifier.js"></script>
+  <script src="assets/JS/cleanChat.js"></script>
+  <script src="assets/JS/refreshia.js"></script>
+  <script src="assets/JS/injector.js"></script>
 </body>
 
 </html>

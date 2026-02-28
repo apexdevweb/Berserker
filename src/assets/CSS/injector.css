@@ -1,0 +1,31 @@
+.injector__content {
+  min-height: 25vh;
+  width: 100%;
+  overflow: hidden;
+}
+.injector__wrapper {
+  min-height: 25vh;
+  width: 100%;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
+  justify-content: space-evenly;
+}
+.injector__sub--wrapper {
+    min-height: 10vh;
+    width: auto;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: space-evenly;
+}
+.injector__input {
+  min-height: 5vh;
+  width: 100%;
+  background: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: white;
+  outline: none;
+  box-shadow: 0px 0px 3px #fff;
+}

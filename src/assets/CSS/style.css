@@ -1,0 +1,61 @@
+@import "header.css";
+@import "exploit_memory.css";
+@import "ia.css";
+@import "progressBarre.css";
+@import "injector.css";
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  background: #212121;
+  background-size: contain;
+}
+.section__title {
+  margin-left: 1vw;
+  letter-spacing: 1px;
+  text-decoration: underline;
+}
+.btnLogo {
+  height: 80px;
+  width: auto;
+  filter: drop-shadow(0px 0px 2px #000);
+}
+/* 1. Largeur de la barre */
+::-webkit-scrollbar {
+  width: 8px; /* Plus fine que la barre Windows par défaut */
+  background: linear-gradient(90deg, #3b82f6, #00ff41);
+  border-radius: 10px;
+}
+
+/* 2. La glissière (le bouton qui bouge) */
+::-webkit-scrollbar-thumb {
+  width: 5px;
+  background: linear-gradient(90deg, #3b82f6, #00ff41);
+  border-radius: 15px;
+  border: none;
+}
+
+/* 3. Effet au survol (Feedback visuel Berserker) */
+::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0px 0px 4px rgb(67, 151, 219);
+}
+
+/* 4. Le fond de la barre (Track) */
+::-webkit-scrollbar-track {
+  background: #000;
+  border-radius: 10px;
+}
+.main__content {
+  width: 100%;
+  height: auto;
+}
+
+
+
+

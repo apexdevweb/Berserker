@@ -1,0 +1,109 @@
+.ia__content {
+  height: auto;
+  width: 100%;
+  display: flex;
+  flex-flow: column nowrap;
+}
+.chat__ai__ctnr {
+  float: right;
+  height: auto;
+  width: 100%;
+  display: flex;
+  flex-flow: column nowrap;
+  place-items: center center;
+  background-color: #000;
+}
+.chat__ia__response {
+  min-height: 100px;
+  width: 80%;
+  padding: 5px;
+  display: flex;
+  flex-flow: column nowrap;
+  border-radius: 15px;
+  text-align: left;
+  border: 1px solid #fff;
+}
+.ia__separate {
+  border: none;
+  width: 25%;
+  height: 3px;
+  background-color: #fff;
+  border-radius: 5px;
+}
+.msg {
+  padding: 12px 18px;
+  border-radius: 18px;
+  max-width: 80%;
+  line-height: 1.4;
+}
+.user {
+  align-self: flex-end;
+  background: #3b82f6;
+  color: white;
+}
+
+.ia {
+  align-self: flex-start;
+  background: #333;
+  color: #e5e7eb;
+  border: 1px solid #444;
+}
+.input__groupe {
+  height: auto;
+  width: 50%;
+  padding: 10px;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: space-evenly;
+  border: 1px solid #333;
+  background: url("assets/image/introPapper.png") no-repeat 50% 50%;
+  border-radius: 10px;
+}
+.aiBtn {
+  height: auto;
+  width: auto;
+  display: flex;
+  flex-flow: row nowrap;
+  place-items: center center;
+  border-radius: 10px;
+  border: none;
+  background-color: #212121;
+  transition: 0.2s ease-in-out;
+}
+.aiBtn:hover {
+  box-shadow: 0px 0px 3px #fff;
+  background-color: red;
+}
+.btnLogo {
+  text-shadow: 0px 0px 5px #fff;
+}
+
+.aiBtn:hover .btnLogo {
+  filter: drop-shadow(0px 0px 3px red);
+}
+.prompt__msg {
+  min-height: 5vh;
+  width: 80%;
+  background: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: white;
+  outline: none;
+  box-shadow: 0px 0px 3px #fff;
+}
+.clean-btn {
+  height: 4vh;
+  width: auto;
+  margin-right: 10px;
+  transition: 0.2s ease-in-out;
+  border: none;
+  border-radius: 10px;
+  background-color: #212121;
+  color: red;
+}
+.clean-btn:hover {
+  color: #212121;
+  box-shadow: 0px 0px 3px #fff;
+  background-color: red;
+}

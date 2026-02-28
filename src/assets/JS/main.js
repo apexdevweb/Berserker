@@ -1,0 +1,55 @@
+let invoke;
+
+// Fonction qui cherche la connexion avec Rust toutes les 100ms
+function detecterTauri() {
+  if (window.__TAURI__ && window.__TAURI__.core) {
+    invoke = window.__TAURI__.core.invoke;
+    console.log("✅ Berserker : Connexion au moteur Rust établie !");
+    document.getElementById("msg-input").placeholder = "Berserker A.I";
+  } else {
+    console.log("⏳ En attente du moteur Tauri...");
+    setTimeout(detecterTauri, 100);
+  }
+}
+
+// On lance la détection immédiatement
+detecterTauri();
+
+async function envoyer() {
+  const input = document.getElementById("msg-input");
+  const chat = document.getElementById("chat");
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  // Sécurité si l'utilisateur clique trop vite au démarrage
+  if (!invoke) {
+    alert("Le moteur n'est pas encore prêt. Attendez une seconde.");
+    return;
+  }
+
+  // 1. Afficher ton message
+  chat.innerHTML += `<div class="msg user">${text}</div>`;
+  input.value = "";
+  chat.scrollTop = chat.scrollHeight;
+
+  // 2. Bulle de chargement
+  const tempId = "loading-" + Date.now();
+  chat.innerHTML += `<div id="${tempId}" class="msg ia"><i>Berserker réfléchit...</i></div>`;
+
+  try {
+    // 3. Appel de la fonction Rust
+    const reponse = await invoke("envoyer_a_ia", { prompt: text });
+    document.getElementById(tempId).innerHTML = reponse;
+  } catch (err) {
+    document.getElementById(
+      tempId
+    ).innerHTML = `<span style="color:red">Erreur : ${err}</span>`;
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// Touche Entrée
+document.getElementById("msg-input").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") envoyer();
+});
