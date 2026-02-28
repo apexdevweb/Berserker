@@ -55,7 +55,9 @@ body {
   width: 100%;
   height: auto;
 }
-
-
+/*ajoute de la classe pour dévoiler le bouton d'analyse par I.A*/
+.view_btn_ia {
+  visibility: visible;
+}
 
 

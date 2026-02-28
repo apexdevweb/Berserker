@@ -24,73 +24,70 @@ use windows::Win32::System::Threading::{
 static LISTE_ADRESSES: Lazy<Mutex<Vec<usize>>> = Lazy::new(|| Mutex::new(Vec::new()));
 
 #[derive(Serialize, Clone)]
+pub struct ResultatScan {
+    adresse: usize,
+    valeur: i32,
+}
+
+#[derive(Serialize, Clone)]
 pub struct ProcessInfo {
     pid: u32,
     name: String,
 }
 
-// --- 1. PREMIER SCAN (ASYNCHRONE) ---
+// --- 1. PREMIER SCAN (AVEC VALEURS) ---
 #[tauri::command]
 fn premier_scan(window: tauri::Window, pid: u32, valeur_recherchee: i32) {
     tauri::async_runtime::spawn(async move {
-        let mut adresses_trouvees = Vec::new();
+        let mut resultats = Vec::new();
         let max_addr: usize = 0x7FFFFFFFFFFF;
+        let mut loop_count = 0;
 
         unsafe {
             if let Ok(handle) = OpenProcess(PROCESS_ALL_ACCESS, false, pid) {
                 let mut base_addr = 0;
                 let mut mem_info = MEMORY_BASIC_INFORMATION::default();
 
-                while VirtualQueryEx(
-                    handle,
-                    Some(base_addr as *const _),
-                    &mut mem_info,
-                    std::mem::size_of::<MEMORY_BASIC_INFORMATION>(),
-                ) != 0
-                {
+                while VirtualQueryEx(handle, Some(base_addr as *const _), &mut mem_info, std::mem::size_of::<MEMORY_BASIC_INFORMATION>()) != 0 {
                     if mem_info.State == MEM_COMMIT && mem_info.Protect == PAGE_READWRITE {
                         let mut buffer = vec![0u8; mem_info.RegionSize];
                         let mut bytes_read = 0;
 
-                        if ReadProcessMemory(
-                            handle,
-                            mem_info.BaseAddress,
-                            buffer.as_mut_ptr() as *mut _,
-                            mem_info.RegionSize,
-                            Some(&mut bytes_read),
-                        )
-                        .is_ok()
-                        {
+                        if ReadProcessMemory(handle, mem_info.BaseAddress, buffer.as_mut_ptr() as *mut _, mem_info.RegionSize, Some(&mut bytes_read)).is_ok() {
                             for i in (0..(bytes_read.saturating_sub(4))).step_by(4) {
-                                let val = i32::from_ne_bytes([
-                                    buffer[i],
-                                    buffer[i + 1],
-                                    buffer[i + 2],
-                                    buffer[i + 3],
-                                ]);
+                                let val = i32::from_ne_bytes([buffer[i], buffer[i+1], buffer[i+2], buffer[i+3]]);
+                                
                                 if val == valeur_recherchee {
-                                    adresses_trouvees.push(mem_info.BaseAddress as usize + i);
+                                    // On stocke l'objet complet : adresse + valeur
+                                    resultats.push(ResultatScan {
+                                        adresse: mem_info.BaseAddress as usize + i,
+                                        valeur: val,
+                                    });
                                 }
-                                if adresses_trouvees.len() >= 2000 {
-                                    break;
-                                }
+                                if resultats.len() >= 2000 { break; }
                             }
                         }
-                        let pourcentage = ((base_addr as f64 / max_addr as f64) * 100.0) as u32;
-                        let _ = window.emit("scan-progress", pourcentage);
+                        
+                        loop_count += 1;
+                        if loop_count % 50 == 0 {
+                            let pourcentage = ((base_addr as f64 / max_addr as f64) * 100.0) as u32;
+                            let _ = window.emit("scan-progress", std::cmp::min(pourcentage, 99));
+                        }
                     }
-                    if adresses_trouvees.len() >= 2000 {
-                        break;
-                    }
+                    if resultats.len() >= 2000 { break; }
                     base_addr = mem_info.BaseAddress as usize + mem_info.RegionSize;
                 }
             }
         }
+
+        // On sauvegarde uniquement les adresses numériques pour le Next Scan
         if let Ok(mut guard) = LISTE_ADRESSES.lock() {
-            *guard = adresses_trouvees.clone();
+            *guard = resultats.iter().map(|r| r.adresse).collect();
         }
+
         let _ = window.emit("scan-progress", 100);
-        let _ = window.emit("scan-complete", adresses_trouvees);
+        // On envoie la liste d'objets {adresse, valeur} au JS
+        let _ = window.emit("scan-complete", resultats);
     });
 }
 
@@ -117,31 +114,35 @@ fn dump_contexte_memoire(pid: u32, adresse: usize) -> Result<Vec<i32>, String> {
     Ok(contexte)
 }
 
-// --- 3. NEXT SCAN ---
+// --- 3. NEXT SCAN (AVEC VALEURS FILTRÉES) ---
 #[tauri::command]
-fn next_scan(pid: u32, nouvelle_valeur: i32) -> Result<Vec<usize>, String> {
+fn next_scan(pid: u32, nouvelle_valeur: i32) -> Result<Vec<ResultatScan>, String> {
     let mut adresses_globales = LISTE_ADRESSES.lock().unwrap();
     let mut resultats_filtres = Vec::new();
+
     unsafe {
-        let handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid).map_err(|_| "Admin requis !")?;
+        let handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid)
+            .map_err(|_| "Admin requis !")?;
+
         for &addr in adresses_globales.iter() {
             let mut buffer: i32 = 0;
-            let _ = ReadProcessMemory(
-                handle,
-                addr as *const _,
-                &mut buffer as *mut _ as *mut _,
-                4,
-                None,
-            );
-            if buffer == nouvelle_valeur {
-                resultats_filtres.push(addr);
+            if ReadProcessMemory(handle, addr as *const _, &mut buffer as *mut _ as *mut _, 4, None).is_ok() {
+                if buffer == nouvelle_valeur {
+                    resultats_filtres.push(ResultatScan {
+                        adresse: addr,
+                        valeur: buffer,
+                    });
+                }
             }
         }
-    }
-    *adresses_globales = resultats_filtres.clone();
-    Ok(resultats_filtres)
-}
+    } // Fin du bloc unsafe
 
+    // 1. Mise à jour de la liste globale pour le prochain filtrage
+    *adresses_globales = resultats_filtres.iter().map(|r| r.adresse).collect();
+    
+    // 2. LA LIGNE MAGIQUE : On renvoie les résultats [1.4]
+    Ok(resultats_filtres) 
+}
 // --- 4. ECRITURE ---
 #[tauri::command]
 fn ecrire_valeur_memoire(pid: u32, adresse: usize, nouvelle_valeur: i32) -> Result<String, String> {

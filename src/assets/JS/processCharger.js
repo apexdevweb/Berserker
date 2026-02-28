@@ -1,5 +1,5 @@
 // Variable globale pour stocker le processus cible (Target)
-let targetPid = null;
+window.targetPid = pid;
 
 /**
  * Filtre les processus pour ne garder que les "Applications"

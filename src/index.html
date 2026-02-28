@@ -57,7 +57,7 @@
                 class="prog__meter"></span>
             </div>
             <div id="res-scan" class="scann__result--ctnr"></div>
-            <button class="btn-primary" onclick="analyserParIA()">Analyze by A.I</button>
+            <button class="ai__btn" id="ai-analyzer" onclick="analyserResultatsNextScan()">Analyze by A.I</button>
         </li>
       </ul>
     </div>
@@ -76,10 +76,7 @@
   <section class="injector__content">
     <h2 class="section__title">Injector</h2>
     <div class="injector__wrapper">
-     <div class="injector__sub--wrapper">
-      <progress id="inject-bar" class="inject__barre" value="0" max="100"></progress><span id="progress-meter" class="prog__meter"></span>
       <input type="text" id="dll-path" class="injector__input" placeholder="paths to the file...">
-     </div>
       <button class="btn-primary" onclick="choisirEtInjecter()">Inject Now</button>
     </div>
     <div id="res-inject"></div>
