@@ -23,10 +23,11 @@ use windows::Win32::System::Threading::{
 
 static LISTE_ADRESSES: Lazy<Mutex<Vec<usize>>> = Lazy::new(|| Mutex::new(Vec::new()));
 
+// Structure flexible pour envoyer des résultats hétérogènes (Int ou Float) au JS
 #[derive(Serialize, Clone)]
 pub struct ResultatScan {
     adresse: usize,
-    valeur: i32,
+    valeur: String, 
 }
 
 #[derive(Serialize, Clone)]
@@ -35,9 +36,9 @@ pub struct ProcessInfo {
     name: String,
 }
 
-// --- 1. PREMIER SCAN (AVEC VALEURS) ---
+// --- 1. PREMIER SCAN MULTI-TYPES (ANTI-FREEZE) ---
 #[tauri::command]
-fn premier_scan(window: tauri::Window, pid: u32, valeur_recherchee: i32) {
+fn premier_scan(window: tauri::Window, pid: u32, valeur_str: String, type_data: String) {
     tauri::async_runtime::spawn(async move {
         let mut resultats = Vec::new();
         let max_addr: usize = 0x7FFFFFFFFFFF;
@@ -55,13 +56,25 @@ fn premier_scan(window: tauri::Window, pid: u32, valeur_recherchee: i32) {
 
                         if ReadProcessMemory(handle, mem_info.BaseAddress, buffer.as_mut_ptr() as *mut _, mem_info.RegionSize, Some(&mut bytes_read)).is_ok() {
                             for i in (0..(bytes_read.saturating_sub(4))).step_by(4) {
-                                let val = i32::from_ne_bytes([buffer[i], buffer[i+1], buffer[i+2], buffer[i+3]]);
                                 
-                                if val == valeur_recherchee {
-                                    // On stocke l'objet complet : adresse + valeur
+                                // LOGIQUE DE DETECTION DE TYPE
+                                let match_found = match type_data.as_str() {
+                                    "f32" => {
+                                        let target = valeur_str.parse::<f32>().unwrap_or(0.0);
+                                        let current = f32::from_ne_bytes([buffer[i], buffer[i+1], buffer[i+2], buffer[i+3]]);
+                                        (current - target).abs() < 0.01 // Tolérance pour les floats
+                                    },
+                                    _ => { // Par défaut i32
+                                        let target = valeur_str.parse::<i32>().unwrap_or(0);
+                                        let current = i32::from_ne_bytes([buffer[i], buffer[i+1], buffer[i+2], buffer[i+3]]);
+                                        current == target
+                                    }
+                                };
+
+                                if match_found {
                                     resultats.push(ResultatScan {
                                         adresse: mem_info.BaseAddress as usize + i,
-                                        valeur: val,
+                                        valeur: valeur_str.clone(),
                                     });
                                 }
                                 if resultats.len() >= 2000 { break; }
@@ -80,88 +93,67 @@ fn premier_scan(window: tauri::Window, pid: u32, valeur_recherchee: i32) {
             }
         }
 
-        // On sauvegarde uniquement les adresses numériques pour le Next Scan
         if let Ok(mut guard) = LISTE_ADRESSES.lock() {
             *guard = resultats.iter().map(|r| r.adresse).collect();
         }
 
         let _ = window.emit("scan-progress", 100);
-        // On envoie la liste d'objets {adresse, valeur} au JS
         let _ = window.emit("scan-complete", resultats);
     });
 }
 
-// --- 2. DUMP CONTEXTE ---
+// --- 2. NEXT SCAN MULTI-TYPES ---
 #[tauri::command]
-fn dump_contexte_memoire(pid: u32, adresse: usize) -> Result<Vec<i32>, String> {
-    let mut contexte = Vec::new();
-    unsafe {
-        let handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid).map_err(|_| "Admin requis")?;
-        let start_addr = adresse.saturating_sub(16);
-        for i in 0..12 {
-            let current_addr = start_addr + (i * 4);
-            let mut buffer: i32 = 0;
-            let ok = ReadProcessMemory(
-                handle,
-                current_addr as *const _,
-                &mut buffer as *mut _ as *mut _,
-                4,
-                None,
-            );
-            contexte.push(if ok.is_ok() { buffer } else { -1 });
-        }
-    }
-    Ok(contexte)
-}
-
-// --- 3. NEXT SCAN (AVEC VALEURS FILTRÉES) ---
-#[tauri::command]
-fn next_scan(pid: u32, nouvelle_valeur: i32) -> Result<Vec<ResultatScan>, String> {
+fn next_scan(pid: u32, nouvelle_valeur: String, type_data: String) -> Result<Vec<ResultatScan>, String> {
     let mut adresses_globales = LISTE_ADRESSES.lock().unwrap();
     let mut resultats_filtres = Vec::new();
 
     unsafe {
-        let handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid)
-            .map_err(|_| "Admin requis !")?;
+        let handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid).map_err(|_| "Admin requis !")?;
 
         for &addr in adresses_globales.iter() {
-            let mut buffer: i32 = 0;
-            if ReadProcessMemory(handle, addr as *const _, &mut buffer as *mut _ as *mut _, 4, None).is_ok() {
-                if buffer == nouvelle_valeur {
+            let mut buffer = [0u8; 4];
+            if ReadProcessMemory(handle, addr as *const _, buffer.as_mut_ptr() as *mut _, 4, None).is_ok() {
+                let match_found = match type_data.as_str() {
+                    "f32" => {
+                        let target = nouvelle_valeur.parse::<f32>().unwrap_or(0.0);
+                        let current = f32::from_ne_bytes(buffer);
+                        (current - target).abs() < 0.01
+                    },
+                    _ => i32::from_ne_bytes(buffer) == nouvelle_valeur.parse::<i32>().unwrap_or(0),
+                };
+
+                if match_found {
                     resultats_filtres.push(ResultatScan {
                         adresse: addr,
-                        valeur: buffer,
+                        valeur: nouvelle_valeur.clone(),
                     });
                 }
             }
         }
-    } // Fin du bloc unsafe
-
-    // 1. Mise à jour de la liste globale pour le prochain filtrage
+    }
     *adresses_globales = resultats_filtres.iter().map(|r| r.adresse).collect();
-    
-    // 2. LA LIGNE MAGIQUE : On renvoie les résultats [1.4]
-    Ok(resultats_filtres) 
+    Ok(resultats_filtres)
 }
-// --- 4. ECRITURE ---
+
+// --- 3. ECRITURE MULTI-TYPES ---
 #[tauri::command]
-fn ecrire_valeur_memoire(pid: u32, adresse: usize, nouvelle_valeur: i32) -> Result<String, String> {
+fn ecrire_valeur_memoire(pid: u32, adresse: usize, nouvelle_valeur: String, type_data: String) -> Result<String, String> {
     unsafe {
         let handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid).map_err(|_| "Admin requis !")?;
-        let buffer = nouvelle_valeur.to_ne_bytes();
-        WriteProcessMemory(
-            handle,
-            adresse as *const c_void,
-            buffer.as_ptr() as *const c_void,
-            4,
-            None,
-        )
-        .map_err(|_| "Échec écriture")?;
+        
+        let buffer = match type_data.as_str() {
+            "f32" => nouvelle_valeur.parse::<f32>().map_err(|_| "Float invalide")?.to_ne_bytes().to_vec(),
+            _ => nouvelle_valeur.parse::<i32>().map_err(|_| "Int invalide")?.to_ne_bytes().to_vec(),
+        };
+
+        WriteProcessMemory(handle, adresse as *const c_void, buffer.as_ptr() as *const c_void, buffer.len(), None)
+            .map_err(|_| "Échec écriture")?;
         Ok(format!("Succès : {} écrit", nouvelle_valeur))
     }
 }
 
-// --- 5. DLL INJECTOR (CORRECTION TYPE) ---
+// --- 4. DLL INJECTOR (RÉPARÉ) ---
 #[tauri::command]
 fn injecter_dll(pid: u32, dll_path: String) -> Result<String, String> {
     unsafe {
@@ -169,115 +161,57 @@ fn injecter_dll(pid: u32, dll_path: String) -> Result<String, String> {
         let path_cstr = CString::new(dll_path).map_err(|_| "Chemin invalide")?;
         let path_len = path_cstr.as_bytes_with_nul().len();
 
-        let remote_mem = VirtualAllocEx(
-            handle,
-            None,
-            path_len,
-            MEM_COMMIT | MEM_RESERVE,
-            PAGE_READWRITE,
-        );
-        if remote_mem.is_null() {
-            return Err("Allocation échouée".into());
-        }
+        let remote_mem = VirtualAllocEx(handle, None, path_len, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+        if remote_mem.is_null() { return Err("Allocation échouée".into()); }
 
-        WriteProcessMemory(
-            handle,
-            remote_mem,
-            path_cstr.as_ptr() as *const c_void,
-            path_len,
-            None,
-        )
-        .map_err(|_| "Échec transfert chemin")?;
+        let _ = WriteProcessMemory(handle, remote_mem, path_cstr.as_ptr() as *const c_void, path_len, None);
 
-        let kernel32 = GetModuleHandleA(windows::core::s!("kernel32.dll"))
-            .map_err(|_| "Kernel32 introuvable")?;
+        let kernel32 = GetModuleHandleA(windows::core::s!("kernel32.dll")).map_err(|_| "Kernel32 introuvable")?;
+        let load_lib_fn = GetProcAddress(kernel32, windows::core::s!("LoadLibraryA")).ok_or("LoadLibraryA introuvable")?;
 
-        // 1. On récupère l'adresse brute
-        let load_lib_fn = GetProcAddress(kernel32, windows::core::s!("LoadLibraryA"))
-            .ok_or("LoadLibraryA introuvable")?;
+        let thread_routine: LPTHREAD_START_ROUTINE = std::mem::transmute(load_lib_fn);
 
-        // 2. On transmute ET on déballe l'Option pour avoir le type LPTHREAD_START_ROUTINE pur [1.3]
-        let thread_start_routine: LPTHREAD_START_ROUTINE = std::mem::transmute(load_lib_fn);
+        CreateRemoteThread(handle, None, 0, thread_routine, Some(remote_mem), 0, None)
+            .map_err(|_| "Injection échouée")?;
 
-        // 3. On passe la valeur au Thread (on utilise unwrap car CreateRemoteThread attend un type spécifique) [1.4]
-        CreateRemoteThread(
-            handle,
-            None,
-            0,
-            thread_start_routine, // Plus besoin de Some() ici, CreateRemoteThread prend l'Option interne [1.5]
-            Some(remote_mem),
-            0,
-            None,
-        )
-        .map_err(|_| "Thread Injection échoué")?;
-
-        Ok("💉 DLL Injectée avec succès !".into())
+        Ok("💉 Injection réussie !".into())
     }
 }
 
-// --- 6. IA (CORRECTION PYERR) ---
+// --- 5. IA (AVEC GESTION D'ERREURS PYTHON) ---
 #[tauri::command]
 fn envoyer_a_ia(prompt: String) -> Result<String, String> {
-    unsafe {
-        env::set_var("PYTHONPATH", "./core");
-    }
+    unsafe { env::set_var("PYTHONPATH", "./core"); }
     Python::with_gil(|py| {
         let ia = py.import_bound("ia_logic").map_err(|e| e.to_string())?;
-        let res: String = ia
-            .getattr("demander_a_ia")
-            .map_err(|e| e.to_string())?
-            .call1((prompt,))
-            .map_err(|e| e.to_string())?
-            .extract()
-            .map_err(|e| e.to_string())?;
+        let res: String = ia.getattr("demander_a_ia").map_err(|e| e.to_string())?
+            .call1((prompt,)).map_err(|e| e.to_string())?
+            .extract().map_err(|e| e.to_string())?;
         Ok(res)
     })
 }
 
+// --- 6. SYSTEM UTILS ---
 #[tauri::command]
 fn lister_processus_objets() -> Vec<ProcessInfo> {
     let mut sys = System::new_all();
     sys.refresh_all();
-    let mut apps: Vec<ProcessInfo> = sys
-        .processes()
-        .values()
+    let mut apps: Vec<ProcessInfo> = sys.processes().values()
         .filter(|p| p.memory() > 5_000_000)
-        .map(|p| ProcessInfo {
-            pid: p.pid().as_u32(),
-            name: p.name().to_string(),
-        })
+        .map(|p| ProcessInfo { pid: p.pid().as_u32(), name: p.name().to_string() })
         .collect();
     apps.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
     apps
 }
 
-#[tauri::command]
-fn relancer_ollama() -> Result<String, String> {
-    let _ = Command::new("taskkill")
-        .args(["/F", "/IM", "ollama*"])
-        .output();
-    std::thread::sleep(std::time::Duration::from_secs(1));
-    Command::new("ollama")
-        .arg("serve")
-        .spawn()
-        .map_err(|e| e.to_string())?;
-    Ok("🛡️ Système IA relancé".to_string())
-}
-
 fn main() {
     let _ = Command::new("ollama").arg("serve").spawn();
     tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
-            envoyer_a_ia,
-            lister_processus_objets,
-            ecrire_valeur_memoire,
-            premier_scan,
-            next_scan,
-            dump_contexte_memoire,
-            injecter_dll,
-            relancer_ollama
+            envoyer_a_ia, lister_processus_objets, ecrire_valeur_memoire,
+            premier_scan, next_scan, injecter_dll
         ])
         .run(tauri::generate_context!())
         .expect("Erreur au lancement");
 }
+
