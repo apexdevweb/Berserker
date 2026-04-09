@@ -4,6 +4,10 @@
   display: flex;
   flex-flow: column nowrap;
 }
+.ia__title {
+  letter-spacing: 1px;
+  text-decoration: underline;
+}
 .chat__ai__ctnr {
   float: right;
   height: auto;
@@ -72,6 +76,7 @@
   transition: 0.2s ease-in-out;
 }
 .aiBtn:hover {
+  cursor: pointer;
   box-shadow: 0px 0px 3px #fff;
   background-color: red;
 }
@@ -81,6 +86,7 @@
 
 .aiBtn:hover .btnLogo {
   filter: drop-shadow(0px 0px 3px red);
+  cursor: pointer;
 }
 .prompt__msg {
   min-height: 5vh;
@@ -103,6 +109,7 @@
   color: red;
 }
 .clean-btn:hover {
+  cursor: pointer;
   color: #212121;
   box-shadow: 0px 0px 3px #fff;
   background-color: red;

@@ -2,7 +2,7 @@ async function refreshAI() {
     const btn = document.querySelector('.clean-btn'); // Ou ton bouton de refresh
     const chat = document.getElementById("chat");
     
-    chat.innerHTML += `<div class="msg ia">🔄 Réinitialisation du noyau Ollama...</div>`;
+    chat.innerHTML += `<div class="msg ia">Réinitialisation du noyau Ollama...</div>`;
     
     try {
         const res = await invoke('relancer_ollama');

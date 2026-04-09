@@ -48,7 +48,7 @@ async function chargerProcessus() {
         container.innerHTML = apps.map(p => `
             <div class="proc-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #333; cursor:pointer;">
                 <span onclick="selectionnerTarget(${p.pid}, '${p.name}')" style="flex:1; font-weight:500;">
-                    <b style="color:#3b82f6;">[${p.pid}]</b> ${p.name}
+                    <b style="color: #000; background-color: cornflowerblue; padding: 3px; border-radius: 5px; font-size: 0.7rem;">${p.pid}</b> ${p.name}
                 </span>
                 <button onclick="tuer(${p.pid}, '${p.name}')" class="stickers">KILL</button>
             </div>

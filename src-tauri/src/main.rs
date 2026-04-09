@@ -1,5 +1,4 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
 use serde::Serialize;
@@ -13,14 +12,15 @@ use tauri::Emitter;
 // --- IMPORTATIONS WINDOWS NETTOYÉES ---
 use windows::Win32::System::Diagnostics::Debug::{ReadProcessMemory, WriteProcessMemory};
 use windows::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
+// --- MODIFIE TES IMPORTS COMME CECI ---
 use windows::Win32::System::Memory::{
     VirtualAllocEx, VirtualQueryEx, MEMORY_BASIC_INFORMATION, MEM_COMMIT, MEM_RESERVE,
-    PAGE_READWRITE,
+    PAGE_READWRITE, PAGE_EXECUTE_READWRITE, // <--- AJOUTE CETTE LIGNE
 };
+
 use windows::Win32::System::Threading::{
     CreateRemoteThread, OpenProcess, LPTHREAD_START_ROUTINE, PROCESS_ALL_ACCESS,
 };
-
 static LISTE_ADRESSES: Lazy<Mutex<Vec<usize>>> = Lazy::new(|| Mutex::new(Vec::new()));
 
 // Structure flexible pour envoyer des résultats hétérogènes (Int ou Float) au JS
@@ -35,40 +35,64 @@ pub struct ProcessInfo {
     pid: u32,
     name: String,
 }
-
+#[tauri::command]
+fn nouveau_scan() {
+    // Vide simplement le Mutex qui contient les adresses trouvées
+    if let Ok(mut guard) = LISTE_ADRESSES.lock() {
+        guard.clear();
+    }
+}
 // --- 1. PREMIER SCAN MULTI-TYPES (ANTI-FREEZE) ---
 #[tauri::command]
-fn premier_scan(window: tauri::Window, pid: u32, valeur_str: String, type_data: String) {
+fn premier_scan(window: tauri::Window, pid: u32, valeur_str: String, type_data: String, step: usize) {
     tauri::async_runtime::spawn(async move {
         let mut resultats = Vec::new();
-        let max_addr: usize = 0x7FFFFFFFFFFF;
-        let mut loop_count = 0;
+        let type_size = match type_data.as_str() {
+            "i16" => 2,
+            "i64" | "f64" => 8,
+            _ => 4,
+        };
 
         unsafe {
             if let Ok(handle) = OpenProcess(PROCESS_ALL_ACCESS, false, pid) {
+                // --- ÉTAPE 1 : CALCUL DU POIDS RÉEL DE LA MÉMOIRE (POUR LA FLUIDITÉ) ---
+                let mut total_memory_to_scan = 0;
+                let mut temp_addr = 0;
+                let mut info = MEMORY_BASIC_INFORMATION::default();
+                
+                while VirtualQueryEx(handle, Some(temp_addr as *const _), &mut info, std::mem::size_of::<MEMORY_BASIC_INFORMATION>()) != 0 {
+                    if info.State == MEM_COMMIT && (info.Protect == PAGE_READWRITE || info.Protect == PAGE_EXECUTE_READWRITE) {
+                        total_memory_to_scan += info.RegionSize;
+                    }
+                    temp_addr = info.BaseAddress as usize + info.RegionSize;
+                }
+
+                // --- ÉTAPE 2 : SCAN RÉEL ---
+                let mut scanned_so_far = 0;
                 let mut base_addr = 0;
                 let mut mem_info = MEMORY_BASIC_INFORMATION::default();
 
                 while VirtualQueryEx(handle, Some(base_addr as *const _), &mut mem_info, std::mem::size_of::<MEMORY_BASIC_INFORMATION>()) != 0 {
-                    if mem_info.State == MEM_COMMIT && mem_info.Protect == PAGE_READWRITE {
+                    let is_writable = mem_info.State == MEM_COMMIT && 
+                        (mem_info.Protect == PAGE_READWRITE || mem_info.Protect == PAGE_EXECUTE_READWRITE);
+
+                    if is_writable {
                         let mut buffer = vec![0u8; mem_info.RegionSize];
                         let mut bytes_read = 0;
 
                         if ReadProcessMemory(handle, mem_info.BaseAddress, buffer.as_mut_ptr() as *mut _, mem_info.RegionSize, Some(&mut bytes_read)).is_ok() {
-                            for i in (0..(bytes_read.saturating_sub(4))).step_by(4) {
+                            let data = &buffer[..bytes_read];
+
+                            for i in (0..data.len().saturating_sub(type_size)).step_by(step) {
+                                let chunk = &data[i..i + type_size];
                                 
-                                // LOGIQUE DE DETECTION DE TYPE
                                 let match_found = match type_data.as_str() {
-                                    "f32" => {
-                                        let target = valeur_str.parse::<f32>().unwrap_or(0.0);
-                                        let current = f32::from_ne_bytes([buffer[i], buffer[i+1], buffer[i+2], buffer[i+3]]);
-                                        (current - target).abs() < 0.01 // Tolérance pour les floats
-                                    },
-                                    _ => { // Par défaut i32
-                                        let target = valeur_str.parse::<i32>().unwrap_or(0);
-                                        let current = i32::from_ne_bytes([buffer[i], buffer[i+1], buffer[i+2], buffer[i+3]]);
-                                        current == target
-                                    }
+                                    "i16" => i16::from_le_bytes(chunk.try_into().unwrap_or([0;2])) == valeur_str.parse::<i16>().unwrap_or(0),
+                                    "i32" => i32::from_le_bytes(chunk.try_into().unwrap_or([0;4])) == valeur_str.parse::<i32>().unwrap_or(0),
+                                    "i64" => i64::from_le_bytes(chunk.try_into().unwrap_or([0;8])) == valeur_str.parse::<i64>().unwrap_or(0),
+                                    "f32" => (f32::from_le_bytes(chunk.try_into().unwrap_or([0;4])) - valeur_str.parse::<f32>().unwrap_or(0.0)).abs() < 0.01,
+                                    "f64" => (f64::from_le_bytes(chunk.try_into().unwrap_or([0;8])) - valeur_str.parse::<f64>().unwrap_or(0.0)).abs() < 0.001,
+                                    _ => false
                                 };
 
                                 if match_found {
@@ -77,19 +101,22 @@ fn premier_scan(window: tauri::Window, pid: u32, valeur_str: String, type_data: 
                                         valeur: valeur_str.clone(),
                                     });
                                 }
-                                if resultats.len() >= 2000 { break; }
+                                if resultats.len() >= 5000 { break; }
                             }
                         }
                         
-                        loop_count += 1;
-                        if loop_count % 50 == 0 {
-                            let pourcentage = ((base_addr as f64 / max_addr as f64) * 100.0) as u32;
-                            let _ = window.emit("scan-progress", std::cmp::min(pourcentage, 99));
+                        // Mise à jour de la progression basée sur les Mo réels traités
+                        scanned_so_far += mem_info.RegionSize;
+                        if total_memory_to_scan > 0 {
+                            let progression = ((scanned_so_far as f64 / total_memory_to_scan as f64) * 100.0) as u32;
+                            let _ = window.emit("scan-progress", progression.min(99));
                         }
                     }
-                    if resultats.len() >= 2000 { break; }
+                    
+                    if resultats.len() >= 5000 { break; }
                     base_addr = mem_info.BaseAddress as usize + mem_info.RegionSize;
                 }
+                let _ = windows::Win32::Foundation::CloseHandle(handle);
             }
         }
 
@@ -102,6 +129,8 @@ fn premier_scan(window: tauri::Window, pid: u32, valeur_str: String, type_data: 
     });
 }
 
+
+
 // --- 2. NEXT SCAN MULTI-TYPES ---
 #[tauri::command]
 fn next_scan(pid: u32, nouvelle_valeur: String, type_data: String) -> Result<Vec<ResultatScan>, String> {
@@ -112,15 +141,32 @@ fn next_scan(pid: u32, nouvelle_valeur: String, type_data: String) -> Result<Vec
         let handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid).map_err(|_| "Admin requis !")?;
 
         for &addr in adresses_globales.iter() {
-            let mut buffer = [0u8; 4];
-            if ReadProcessMemory(handle, addr as *const _, buffer.as_mut_ptr() as *mut _, 4, None).is_ok() {
+            // Déterminer la taille à lire selon le type
+            let size = match type_data.as_str() {
+                "i16" => 2,
+                "i32" | "f32" => 4,
+                "i64" | "f64" => 8,
+                _ => 4,
+            };
+
+            let mut buffer = vec![0u8; size];
+            if ReadProcessMemory(handle, addr as *const _, buffer.as_mut_ptr() as *mut _, size, None).is_ok() {
+                
                 let match_found = match type_data.as_str() {
+                    "i16" => i16::from_le_bytes(buffer[..2].try_into().unwrap_or([0;2])) == nouvelle_valeur.parse::<i16>().unwrap_or(0),
+                    "i32" => i32::from_le_bytes(buffer[..4].try_into().unwrap_or([0;4])) == nouvelle_valeur.parse::<i32>().unwrap_or(0),
+                    "i64" => i64::from_le_bytes(buffer[..8].try_into().unwrap_or([0;8])) == nouvelle_valeur.parse::<i64>().unwrap_or(0),
                     "f32" => {
                         let target = nouvelle_valeur.parse::<f32>().unwrap_or(0.0);
-                        let current = f32::from_ne_bytes(buffer);
+                        let current = f32::from_le_bytes(buffer[..4].try_into().unwrap_or([0;4]));
                         (current - target).abs() < 0.01
                     },
-                    _ => i32::from_ne_bytes(buffer) == nouvelle_valeur.parse::<i32>().unwrap_or(0),
+                    "f64" => {
+                        let target = nouvelle_valeur.parse::<f64>().unwrap_or(0.0);
+                        let current = f64::from_le_bytes(buffer[..8].try_into().unwrap_or([0;8]));
+                        (current - target).abs() < 0.001
+                    },
+                    _ => false,
                 };
 
                 if match_found {
@@ -131,7 +177,9 @@ fn next_scan(pid: u32, nouvelle_valeur: String, type_data: String) -> Result<Vec
                 }
             }
         }
+        let _ = windows::Win32::Foundation::CloseHandle(handle);
     }
+    
     *adresses_globales = resultats_filtres.iter().map(|r| r.adresse).collect();
     Ok(resultats_filtres)
 }
@@ -209,7 +257,7 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             envoyer_a_ia, lister_processus_objets, ecrire_valeur_memoire,
-            premier_scan, next_scan, injecter_dll
+            premier_scan, next_scan, nouveau_scan, injecter_dll
         ])
         .run(tauri::generate_context!())
         .expect("Erreur au lancement");

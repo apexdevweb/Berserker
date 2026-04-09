@@ -27,7 +27,7 @@ listen("scan-complete", (event) => {
   dernieresAdresses = resultats; // Mémorise pour le diagnostic IA
 
   if (!resultats || resultats.length === 0) {
-    res.innerHTML = `<span style="color:#ff4444">❌ Aucun résultat trouvé.</span>`;
+    res.innerHTML = `<span style="color:#ff4444">Aucun résultat trouvé.</span>`;
   } else {
     // Affiche Adresse | Valeur (supporte Int et Float)
     res.innerHTML =
@@ -68,25 +68,29 @@ async function modifierValeur(addrInt, addrHex) {
 // --- 4. PREMIER SCAN MULTI-TYPES ---
 async function lancerPremierScan() {
   const valInput = document.getElementById("valeur-scan");
-  const typeSelect = document.getElementById("type-data"); // Nouveau menu déroulant
+  const typeSelect = document.getElementById("type-data");
+  const stepInput = document.getElementById("scan-step"); // Récupération du slider
   const res = document.getElementById("res-scan");
   const bar = document.getElementById("scan-bar");
 
-  if (!window.targetPid) return alert("⚠️ Cible manquante ! Sélectionnez un processus.");
-  if (!valInput.value) return alert("⚠️ Entrez une valeur à rechercher.");
+  if (!window.targetPid) return alert("Cible manquante ! Sélectionnez un processus.");
+  if (!valInput.value) return alert("Entrez une valeur à rechercher.");
 
   const valStr = valInput.value;
-  const type = typeSelect.value; // "i32" ou "f32"
+  const type = typeSelect.value; 
+  // On récupère le step (si le slider n'existe pas encore, on met 4 par défaut)
+  const stepVal = stepInput ? parseInt(stepInput.value) : 4;
 
   if (bar) bar.value = 0;
-  res.innerHTML = `<i style="color:#3b82f6" class="scanning-text">🔍 Scan ${type} en cours...</i>`;
+  res.innerHTML = `<i style="color:#3b82f6" class="scanning-text">Scan ${type} (Step: ${stepVal}) en cours...</i>`;
 
   try {
-      // On envoie les arguments au nouveau moteur Rust
+      // Envoi des arguments à Rust (Attention : step est ajouté ici)
       await window.invoke("premier_scan", { 
           pid: window.targetPid, 
           valeurStr: valStr, 
-          typeData: type 
+          typeData: type,
+          step: stepVal 
       });
   } catch (err) {
       console.error("Erreur invoke premier_scan:", err);

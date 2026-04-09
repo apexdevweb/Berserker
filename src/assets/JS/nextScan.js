@@ -7,14 +7,14 @@ async function lancerNextScan() {
   const typeSelect = document.getElementById("type-data"); // Récupère le type (i32/f32)
   const res = document.getElementById("res-scan");
 
-  if (!window.targetPid) return alert("⚠️ Sélectionnez un processus d'abord !");
+  if (!window.targetPid) return alert("Sélectionnez un processus d'abord !");
 
   const valStr = valInput.value;
   const type = typeSelect.value;
 
-  if (!valStr) return alert("⚠️ Entrez la nouvelle valeur à filtrer.");
+  if (!valStr) return alert("Entrez la nouvelle valeur à filtrer.");
 
-  res.innerHTML = `<i style="color:#00ff41">🔍 Filtrage ${type} en cours...</i>`;
+  res.innerHTML = `<i style="color:#00ff41">Filtrage ${type} en cours...</i>`;
 
   try {
     // Appel à Rust : On envoie la valeur en String et le type choisi
@@ -42,7 +42,7 @@ function afficherResultatsNext(adresses) {
   const aiBtn = document.getElementById("ai-analyzer");
 
   if (!adresses || adresses.length === 0) {
-    res.innerHTML = `❌ Aucun résultat correspondant à la nouvelle valeur.`;
+    res.innerHTML = `Aucun résultat correspondant à la nouvelle valeur.`;
     if (aiBtn) aiBtn.classList.remove("view_btn_ia");
     return;
   }
@@ -80,7 +80,7 @@ async function analyserResultatsNextScan() {
   const res = document.getElementById("res-scan");
   const contenuActuel = res.innerHTML; 
 
-  res.innerHTML = contenuActuel + `<div style="color:#3b82f6; margin-top:10px;">🧠 Berserker A.I analyse les ${adressesSurvivantes.length} adresses cibles...</div>`;
+  res.innerHTML = contenuActuel + `<div style="color:#3b82f6; margin-top:10px;">Berserker A.I analyse les ${adressesSurvivantes.length} adresses cibles...</div>`;
 
   let rapport = "RAPPORT DE FILTRAGE MÉMOIRE :\n";
 

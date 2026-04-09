@@ -5,6 +5,7 @@
   flex-flow: row nowrap;
   align-items: center;
   justify-content: space-evenly;
+  margin: 15px;
 }
 #scan-bar {
   appearance: none; /* Supprime le style Windows par défaut */

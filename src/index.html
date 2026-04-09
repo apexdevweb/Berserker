@@ -17,11 +17,13 @@
     </hgroup>
     <ul class="info__capacity--ctnr">
       <li class="info__capacity--el"><em>Exploit Memory</em></li>
-      <li class="info__capacity--el"><em>By pass sécurity</em></li>
       <li class="info__capacity--el"><em>Injector</em></li>
-      <li class="info__capacity--el"><em>Encryptor</em></li>
     </ul>
-    <p class="signature">By Script'Enjøyer 2026</p>
+    <div class="signature__container">
+      <img src="assets/image/dogsWhite.png" class="ofr__logo">
+      <h3 class="signature">Powered by OutOfReach 2026</h3>
+      <h6 class="sub__signature">All rights reserved</h6>
+    </div>
   </header>
   <section class="exploit__memory--content">
     <h2 class="section__title">Exploit Memory</h2>
@@ -45,10 +47,25 @@
           </div>
         </li>
         <li class="option__el">
-          <h2 class="option__title">Memory scan</h2>
           <div class="option__wrapper">
+            <div class="option__sub__elctnr">
+              <h2 class="option__title">Memory scan</h2>
+              <div class="option__sub__wrapper">
+                <small class="scann__option__infos">step 1 slow and high precision ←→ step 8 fast and low precision</small>
+                <label for="scan-step">Scan Speed and Precision (Step): <span id="step-value">4</span></label>
+                <input type="range" id="scan-step" min="1" max="8" value="4" step="1" oninput="document.getElementById('step-value').innerText = this.value">
+              </div>
+            </div>
             <div class="btn__scan--ctnr">
               <input type="number" id="valeur-scan" class="entry__value" placeholder="Valeur (ex: 100)">
+              <select id="type-data" class="entry__value">
+                <option value="i32">4 Bytes (Int)</option>
+                <option value="i16">2 Bytes (Short)</option>
+                <option value="i64">8 Bytes (Long)</option>
+                <option value="f32">Float</option>
+                <option value="f64">Double</option>
+              </select>
+              <button class="btn-primary" onclick="lancerNouveauScan()">New Scan</button>
               <button class="btn-primary" onclick="lancerPremierScan()">First Scan</button>
               <button class="btn-primary" onclick="lancerNextScan()">Next Scan</button>
             </div>
@@ -56,19 +73,23 @@
               <progress id="scan-bar" value="0" max="100"></progress><span id="progress-meter"
                 class="prog__meter"></span>
             </div>
-            <div id="res-scan" class="scann__result--ctnr"></div>
-            <button class="ai__btn" id="ai-analyzer" onclick="analyserResultatsNextScan()">Analyze by A.I</button>
+            <div class="result__main__container">
+              <div id="res-scan" class="scann__result--ctnr"></div>
+              <button class="ai__btn" id="ai-analyzer" onclick="analyserResultatsNextScan()">Analyze by A.I</button>
+            </div>
         </li>
       </ul>
     </div>
   </section>
   <section class="ia__content">
     <div class="chat__ai__ctnr">
+      <h2 class="ia__title">Berserker A.I</h2>
       <div id="chat" class="chat__ia__response"></div>
       <hr class="ia__separate">
       <div id="input-area" class="input__groupe">
         <input type="text" id="msg-input" placeholder="Berserker A.I" class="prompt__msg" />
-        <button onclick="envoyer()" class="aiBtn"><img src="assets/image/berserkerLogo.png" alt="Logo"class="btnLogo"></button>
+        <button onclick="envoyer()" class="aiBtn"><img src="assets/image/berserkerLogo.png" alt="Logo"
+            class="btnLogo"></button>
         <button onclick="cleanChat()" class="clean-btn" title="Purge Terminal">PURGE</button>
       </div>
     </div>
@@ -84,6 +105,7 @@
   <script src="assets/JS/main.js"></script>
   <script src="assets/JS/processCharger.js"></script>
   <script src="assets/JS/memoryScan.js"></script>
+  <script src="assets/JS/newScan.js"></script>
   <script src="assets/JS/firstScan.js"></script>
   <script src="assets/JS/nextScan.js"></script>
   <script src="assets/JS/valueModifier.js"></script>
